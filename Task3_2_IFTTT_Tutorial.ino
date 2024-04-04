@@ -9,7 +9,7 @@ char pass[] = SECRET_PASS;                // your network password (use for WPA,
 String apikey = SECRET_APIKEY;  
 hp_BH1750 BH1750;   
 WiFiClient client;
-String eventName = "sun_event";
+String eventName = "It's_sunny";
 
 char   HOST_NAME[] = "maker.ifttt.com";
 String PATH_NAME   = "/trigger/" + eventName + "/with/key/" + apikey; // change your EVENT-NAME and YOUR-KEY
@@ -20,6 +20,7 @@ bool sunlight = false;
 
 // 1 sec poll interval for soft testing, the sun dosn't move that fast so we could poll it evey minute to avoid the status changing too quickly
 const int pollInterval = 1000;
+
 
 void setup() {
   // initialize WiFi connection
@@ -41,6 +42,31 @@ void loop() {
   delay(pollInterval);
 }
 
+void getLUX(){
+  BH1750.start();   //starts a measurement
+  float lux=BH1750.getLux();  //  waits until a conversion finished
+  Serial.println(lux);        
+  lightCheck(lux);
+}
+
+void lightCheck(float lux){
+  bool sunlightCurrentStatus = sunlight;
+  String sun = "off";
+  
+  if (lux >= sunlightLux) {
+    sunlight = true;
+    sun = "on";
+  }
+  else {
+    sunlight = false;
+    sun = "off";
+  }
+    
+  if (sunlightCurrentStatus != sunlight) {
+    Serial.println("Sun Changed to " + sun);
+    serverSend(sun, lux);
+  }
+ }
 void serverSend(String sun, float lux){
 
   String queryString = "?value1=" + sun + "&value2=" + lux;
@@ -72,30 +98,3 @@ void serverSend(String sun, float lux){
   Serial.println();
   Serial.println("disconnected");
 }
-
-
-void getLUX(){
-  BH1750.start();   //starts a measurement
-  float lux=BH1750.getLux();  //  waits until a conversion finished
-  Serial.println(lux);        
-  lightCheck(lux);
-}
-
-void lightCheck(float lux){
-  bool sunlightCurrentStatus = sunlight;
-  String sun = "off";
-  
-  if (lux >= sunlightLux) {
-    sunlight = true;
-    sun = "on";
-  }
-  else {
-    sunlight = false;
-    sun = "off";
-  }
-    
-  if (sunlightCurrentStatus != sunlight) {
-    Serial.println("Sun Changed to " + sun);
-    serverSend(sun, lux);
-  }
- }
